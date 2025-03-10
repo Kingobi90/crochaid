@@ -1,0 +1,46 @@
+{
+  "name": "croch-aide",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build && next export",
+    "start": "next start",
+    "lint": "next lint",
+    "export": "next build && next export",
+    "deploy": "npm run export && firebase deploy",
+    "deploy:hosting": "npm run export && firebase deploy --only hosting",
+    "deploy:rules": "firebase deploy --only firestore:rules,storage:rules"
+  },
+  "dependencies": {
+    "@headlessui/react": "^1.7.0",
+    "@heroicons/react": "^2.0.0",
+    "@stripe/stripe-js": "^5.10.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "autoprefixer": "^10.4.0",
+    "cloudinary": "^1.41.0",
+    "date-fns": "^2.30.0",
+    "firebase": "^10.0.0",
+    "next": "^14.0.0",
+    "postcss": "^8.4.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "socket.io-client": "^4.7.0",
+    "stripe": "^17.7.0",
+    "tailwindcss": "^3.3.0",
+    "typescript": "^5.0.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/socket.io-client": "^3.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "eslint-config-next": "^14.0.0",
+    "eslint-plugin-react": "^7.33.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "firebase-tools": "^13.0.0"
+  }
+}

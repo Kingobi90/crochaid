@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "croch-aide",
+    "staging": "crochaid-42dfd"
+  },
+  "targets": {},
+  "etags": {}
+}
