@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useEffect } from 'react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading, signOut: handleSignOut } = useAuth();
+  const { user, loading, logout } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -17,10 +17,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const handleLogout = async () => {
     try {
-      await handleSignOut();
+      await logout();
       router.push('/login');
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('Error logging out:', error);
     }
   };
 

@@ -83,7 +83,7 @@ export default function TutorManagementPage() {
                               ) : (
                                 <div className="h-12 w-12 rounded-full bg-primary-100 flex items-center justify-center">
                                   <span className="text-primary-600 font-medium text-lg">
-                                    {tutor.displayName[0].toUpperCase()}
+                                    {tutor.displayName?.[0]?.toUpperCase() || '?'}
                                   </span>
                                 </div>
                               )}

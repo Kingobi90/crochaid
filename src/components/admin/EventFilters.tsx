@@ -1,17 +1,14 @@
 import { useState } from 'react';
 import type { Event } from '@/lib/firebase/types';
 
-type FilterValues = {
-  search: string;
-  type: Event['type'] | 'all';
-  skillLevel: Event['skillLevel'] | 'all';
-  dateRange: {
-    start: string;
-    end: string;
-  };
-  sortBy: 'date' | 'title' | 'attendees';
-  sortOrder: 'asc' | 'desc';
-};
+export interface FilterValues {
+  searchTerm: string;
+  type: string;
+  skillLevel: string;
+  startDate: string;
+  endDate: string;
+  sortBy: string;
+}
 
 type EventFiltersProps = {
   onFilterChange: (filters: FilterValues) => void;
@@ -19,37 +16,34 @@ type EventFiltersProps = {
 
 export default function EventFilters({ onFilterChange }: EventFiltersProps) {
   const [filters, setFilters] = useState<FilterValues>({
-    search: '',
+    searchTerm: '',
     type: 'all',
     skillLevel: 'all',
-    dateRange: {
-      start: '',
-      end: '',
-    },
+    startDate: '',
+    endDate: '',
     sortBy: 'date',
-    sortOrder: 'asc',
   });
 
-  const handleChange = (name: string, value: string) => {
-    let newFilters: FilterValues;
+  const handleChange = (field: keyof FilterValues, value: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+    onFilterChange({
+      ...filters,
+      [field]: value,
+    });
+  };
 
-    if (name === 'start' || name === 'end') {
-      newFilters = {
-        ...filters,
-        dateRange: {
-          ...filters.dateRange,
-          [name]: value,
-        },
-      };
-    } else {
-      newFilters = {
-        ...filters,
-        [name]: value,
-      };
-    }
-
-    setFilters(newFilters);
-    onFilterChange(newFilters);
+  const handleSortChange = (value: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      sortBy: value,
+    }));
+    onFilterChange({
+      ...filters,
+      sortBy: value,
+    });
   };
 
   return (
@@ -64,8 +58,8 @@ export default function EventFilters({ onFilterChange }: EventFiltersProps) {
               type="text"
               name="search"
               id="search"
-              value={filters.search}
-              onChange={(e) => handleChange('search', e.target.value)}
+              value={filters.searchTerm}
+              onChange={(e) => handleChange('searchTerm', e.target.value)}
               placeholder="Search by title or location"
               className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
             />
@@ -117,17 +111,19 @@ export default function EventFilters({ onFilterChange }: EventFiltersProps) {
             Sort By
           </label>
           <div className="mt-1">
-            <select
-              id="sortBy"
-              name="sortBy"
-              value={filters.sortBy}
-              onChange={(e) => handleChange('sortBy', e.target.value)}
-              className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-            >
-              <option value="date">Date</option>
-              <option value="title">Title</option>
-              <option value="attendees">Attendees</option>
-            </select>
+            <div className="flex items-center space-x-2">
+              <select
+                id="sortBy"
+                name="sortBy"
+                value={filters.sortBy}
+                onChange={(e) => handleSortChange(e.target.value)}
+                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+              >
+                <option value="date">Date</option>
+                <option value="title">Title</option>
+                <option value="attendees">Attendees</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -140,8 +136,8 @@ export default function EventFilters({ onFilterChange }: EventFiltersProps) {
               type="date"
               name="startDate"
               id="startDate"
-              value={filters.dateRange.start}
-              onChange={(e) => handleChange('start', e.target.value)}
+              value={filters.startDate}
+              onChange={(e) => handleChange('startDate', e.target.value)}
               className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
             />
           </div>
@@ -156,8 +152,8 @@ export default function EventFilters({ onFilterChange }: EventFiltersProps) {
               type="date"
               name="endDate"
               id="endDate"
-              value={filters.dateRange.end}
-              onChange={(e) => handleChange('end', e.target.value)}
+              value={filters.endDate}
+              onChange={(e) => handleChange('endDate', e.target.value)}
               className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
             />
           </div>
@@ -169,15 +165,12 @@ export default function EventFilters({ onFilterChange }: EventFiltersProps) {
               type="button"
               onClick={() => {
                 const newFilters: FilterValues = {
-                  search: '',
+                  searchTerm: '',
                   type: 'all',
                   skillLevel: 'all',
-                  dateRange: {
-                    start: '',
-                    end: '',
-                  },
+                  startDate: '',
+                  endDate: '',
                   sortBy: 'date',
-                  sortOrder: 'asc',
                 };
                 setFilters(newFilters);
                 onFilterChange(newFilters);
@@ -185,13 +178,6 @@ export default function EventFilters({ onFilterChange }: EventFiltersProps) {
               className="text-sm text-primary-600 hover:text-primary-500"
             >
               Clear Filters
-            </button>
-            <button
-              type="button"
-              onClick={() => handleChange('sortOrder', filters.sortOrder === 'asc' ? 'desc' : 'asc')}
-              className="ml-4 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
-            >
-              {filters.sortOrder === 'asc' ? '↑ Ascending' : '↓ Descending'}
             </button>
           </div>
         </div>

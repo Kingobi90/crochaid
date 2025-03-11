@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 
@@ -70,10 +72,12 @@ export default function Calendar({ events }: { events: Event[] }) {
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <h3 className="text-lg font-semibold mb-4">{selectedEvent.title}</h3>
             <div className="space-y-2">
-              <p>Date: {'toDate' in selectedEvent.date ? 
+              <p>Date: {selectedEvent.date ? 
               format(selectedEvent.date.toDate(), 'MMMM d, yyyy') : 
               'Date not available'}</p>
-              <p>Time: {selectedEvent.startTime} - {selectedEvent.endTime}</p>
+              <p>Time: {selectedEvent.date ? 
+              format(selectedEvent.date.toDate(), 'h:mm a') : 
+              'Time not available'}</p>
               <p>Type: {selectedEvent.type}</p>
               <p>Skill Level: {selectedEvent.skillLevel}</p>
               <p>Spots Available: {selectedEvent.maxAttendees - selectedEvent.currentAttendees}</p>

@@ -170,7 +170,7 @@ export default function BookingsPage() {
                             ) : (
                               <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center">
                                 <span className="text-primary-600 font-medium">
-                                  {booking.user?.displayName[0].toUpperCase()}
+                                  {booking.user?.displayName?.[0]?.toUpperCase() || '?'}
                                 </span>
                               </div>
                             )}

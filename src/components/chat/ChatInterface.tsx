@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/auth';
 import { io, Socket } from 'socket.io-client';

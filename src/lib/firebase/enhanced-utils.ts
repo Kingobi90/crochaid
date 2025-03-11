@@ -122,15 +122,11 @@ export const getChatMessagesWithPagination = async (
 };
 
 // Real-time chat subscription
-export const subscribeToChatMessages = (
-  roomId: string,
-  callback: (messages: ChatMessage[]) => void,
-  limit: number = 50
-) => {
+export const subscribeToMessages = (roomId: string, messageLimit: number, callback: (messages: ChatMessage[]) => void) => {
   const messagesQuery = query(
     collection(db, `chatRooms/${roomId}/messages`),
     orderBy('createdAt', 'desc'),
-    limit(limit)
+    limit(messageLimit)
   );
 
   return onSnapshot(messagesQuery, (snapshot) => {

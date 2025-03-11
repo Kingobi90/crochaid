@@ -31,8 +31,8 @@ export default function EventsPage() {
     let filtered = [...events];
 
     // Apply search filter
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
+    if (filters.searchTerm) {
+      const searchLower = filters.searchTerm.toLowerCase();
       filtered = filtered.filter(
         event =>
           event.title.toLowerCase().includes(searchLower) ||
@@ -41,44 +41,38 @@ export default function EventsPage() {
     }
 
     // Apply type filter
-    if (filters.type !== 'all') {
+    if (filters.type && filters.type !== 'all') {
       filtered = filtered.filter(event => event.type === filters.type);
     }
 
     // Apply skill level filter
-    if (filters.skillLevel !== 'all') {
+    if (filters.skillLevel && filters.skillLevel !== 'all') {
       filtered = filtered.filter(event => event.skillLevel === filters.skillLevel);
     }
 
     // Apply date range filter
-    if (filters.dateRange.start) {
-      const startDate = new Date(filters.dateRange.start);
-      filtered = filtered.filter(event => event.date.toDate() >= startDate);
+    if (filters.startDate) {
+      filtered = filtered.filter(event => event.date >= filters.startDate);
     }
-    if (filters.dateRange.end) {
-      const endDate = new Date(filters.dateRange.end);
-      filtered = filtered.filter(event => event.date.toDate() <= endDate);
+    if (filters.endDate) {
+      filtered = filtered.filter(event => event.date <= filters.endDate);
     }
 
     // Apply sorting
-    filtered.sort((a, b) => {
-      switch (filters.sortBy) {
-        case 'date':
-          return filters.sortOrder === 'asc'
-            ? a.date.toMillis() - b.date.toMillis()
-            : b.date.toMillis() - a.date.toMillis();
-        case 'title':
-          return filters.sortOrder === 'asc'
-            ? a.title.localeCompare(b.title)
-            : b.title.localeCompare(a.title);
-        case 'attendees':
-          return filters.sortOrder === 'asc'
-            ? a.currentAttendees - b.currentAttendees
-            : b.currentAttendees - a.currentAttendees;
-        default:
-          return 0;
-      }
-    });
+    if (filters.sortBy) {
+      filtered.sort((a, b) => {
+        switch (filters.sortBy) {
+          case 'date':
+            return a.date.localeCompare(b.date);
+          case 'title':
+            return a.title.localeCompare(b.title);
+          case 'attendees':
+            return (b.currentAttendees || 0) - (a.currentAttendees || 0);
+          default:
+            return 0;
+        }
+      });
+    }
 
     setFilteredEvents(filtered);
   };

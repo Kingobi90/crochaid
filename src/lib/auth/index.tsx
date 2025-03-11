@@ -14,7 +14,33 @@ import { auth, db } from '../firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { getUser, createUser } from '../firebase/utils';
 import type { User } from '../firebase/types';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import toast from 'react-hot-toast';
+
+// Cookie helper functions
+const setCookie = (name: string, value: string, options: Record<string, any> = {}) => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const cookieOptions = {
+    path: '/',
+    ...options,
+    // Only set secure in production
+    ...(isProduction && { secure: true }),
+    sameSite: isProduction ? 'Strict' : 'Lax'
+  };
+
+  const cookieString = Object.entries(cookieOptions).reduce((acc, [key, value]) => {
+    if (value === true) return `${acc}; ${key}`;
+    if (value === false) return acc;
+    return `${acc}; ${key}=${value}`;
+  }, `${name}=${value}`);
+
+  document.cookie = cookieString;
+  console.log('Setting cookie:', cookieString);
+};
+
+const clearCookie = (name: string) => {
+  document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+};
 
 export type AuthContextType = {
   user: FirebaseUser | null;
@@ -43,71 +69,97 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
   const [userData, setUserData] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
+  // Set up auth state listener
   useEffect(() => {
     console.log('Setting up auth state listener...');
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       console.log('Auth state changed:', user ? 'User authenticated' : 'No user');
-      setUser(user);
+      setLoading(true);
       
       if (user) {
         try {
           console.log('Fetching user data for:', user.uid);
           const userDoc = await getUser(user.uid);
           console.log('User data fetched:', userDoc);
+          
+          if (!userDoc) {
+            console.error('No user document found');
+            setUser(null);
+            setUserData(null);
+            setLoading(false);
+            clearCookie('__session');
+            toast.error('User data not found');
+            return;
+          }
+
+          // Set auth token in cookie
+          const token = await user.getIdToken();
+          setCookie('__session', token, {
+            maxAge: 3600,
+            httpOnly: false // Allow client-side access for development
+          });
+          
+          // Update state
+          setUser(user);
           setUserData(userDoc);
           
-          // Navigate based on role
-          if (userDoc?.role === 'admin') {
+          // Get the intended destination
+          const from = searchParams?.get('from');
+          
+          // Show success message
+          toast.success('Signed in successfully!');
+          
+          // Navigate based on role and intended destination
+          if (userDoc.role === 'admin') {
             console.log('Admin user detected, navigating to admin dashboard');
-            router.push('/dashboard/admin');
+            router.replace(from || '/dashboard/admin');
           } else {
             console.log('Regular user detected, navigating to dashboard');
-            router.push('/dashboard');
+            router.replace(from || '/dashboard');
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
+          // Clear any stale data
+          setUser(null);
+          setUserData(null);
+          clearCookie('__session');
+          toast.error('Error fetching user data');
         }
       } else {
-        console.log('No user, clearing user data');
+        console.log('No user, clearing user data and cookie');
+        setUser(null);
         setUserData(null);
+        clearCookie('__session');
       }
       
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [router]);
+  }, [router, searchParams]);
 
-  const signIn = async (email: string, password: string): Promise<void> => {
+  const signIn = async (email: string, password: string) => {
     try {
+      setLoading(true);
       const result = await signInWithEmailAndPassword(auth, email, password);
-      console.log('Sign in successful:', {
-        uid: result.user.uid,
-        email: result.user.email
+      // Force token refresh
+      const token = await result.user.getIdToken(true);
+      setCookie('__session', token, {
+        maxAge: 3600,
+        httpOnly: false
       });
-      
-      // Fetch user data immediately after sign in
-      const userDoc = await getUser(result.user.uid);
-      setUserData(userDoc);
-      
-      // Navigation will be handled by the auth state change listener
     } catch (error: any) {
-      console.error('Error signing in:', error);
-      if (error.code === 'auth/wrong-password') {
-        throw new Error('Incorrect password');
-      } else if (error.code === 'auth/user-not-found') {
-        throw new Error('No account found with this email');
-      } else if (error.code === 'auth/invalid-email') {
-        throw new Error('Invalid email address');
-      } else {
-        throw new Error('Failed to sign in. Please try again.');
-      }
+      setLoading(false);
+      toast.error(error.message || 'Failed to sign in');
+      throw error;
     }
   };
 
   const signInWithGoogle = async (): Promise<void> => {
     try {
+      setLoading(true);
       console.log('Starting Google sign-in process...');
       const provider = new GoogleAuthProvider();
       provider.addScope('email');
@@ -115,64 +167,22 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       
       console.log('Initiating Google popup...');
       const result = await signInWithPopup(auth, provider);
-      const { user: firebaseUser } = result;
-      
-      console.log('Google Sign-in successful:', {
-        uid: firebaseUser.uid,
-        email: firebaseUser.email,
-        displayName: firebaseUser.displayName,
-        isNewUser: result.additionalUserInfo?.isNewUser
+      // Force token refresh
+      const token = await result.user.getIdToken(true);
+      setCookie('__session', token, {
+        maxAge: 3600,
+        httpOnly: false
       });
-      
-      // Check if user exists in Firestore
-      console.log('Checking if user exists in Firestore...');
-      let userDoc = await getUser(firebaseUser.uid);
-      
-      // If user doesn't exist, create a new record
-      if (!userDoc) {
-        console.log('Creating new user record in Firestore...');
-        const newUserData = {
-          email: firebaseUser.email || '',
-          displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || '',
-          role: 'user' as const,
-          createdAt: serverTimestamp(),
-          lastLoginAt: serverTimestamp(),
-          photoURL: firebaseUser.photoURL || undefined,
-          skillLevel: 'beginner' as const
-        };
-        await createUser(firebaseUser.uid, newUserData);
-        console.log('New user record created successfully');
-        userDoc = await getUser(firebaseUser.uid);
-      } else {
-        console.log('Existing user found:', userDoc);
-      }
-      
-      // Set user data in state
-      if (userDoc) {
-        console.log('Setting user data in state:', userDoc);
-        setUserData(userDoc);
-        // Navigation will be handled by the auth state change listener
-      }
     } catch (error: any) {
-      console.error('Error signing in with Google:', {
-        code: error.code,
-        message: error.message,
-        fullError: error
-      });
-      if (error.code === 'auth/popup-blocked') {
-        throw new Error('Please enable popups for this website to use Google Sign-in');
-      } else if (error.code === 'auth/popup-closed-by-user') {
-        throw new Error('Google Sign-in was cancelled. Please try again.');
-      } else if (error.code === 'auth/unauthorized-domain') {
-        throw new Error('This domain is not authorized for Google Sign-in. Please contact support.');
-      } else {
-        throw new Error('Failed to sign in with Google. Please try again.');
-      }
+      setLoading(false);
+      toast.error(error.message || 'Failed to sign in with Google');
+      throw error;
     }
   };
 
   const signUp = async (email: string, password: string): Promise<void> => {
     try {
+      setLoading(true);
       // First create the Firebase auth user
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const { user: firebaseUser } = userCredential;
@@ -191,36 +201,37 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       // Create user document in Firestore
       await createUser(firebaseUser.uid, userData);
       
-      // Fetch the created user to ensure we have the correct data
-      const createdUser = await getUser(firebaseUser.uid);
-      if (createdUser) {
-        setUserData(createdUser);
-        // Navigation will be handled by the auth state change listener
-      }
+      // Force token refresh and set cookie
+      const token = await firebaseUser.getIdToken(true);
+      setCookie('__session', token, {
+        maxAge: 3600,
+        httpOnly: false
+      });
+      
+      toast.success('Account created successfully!');
     } catch (error: any) {
       console.error('Error signing up:', error);
       // Delete the auth user if Firestore creation fails
       if (auth.currentUser) {
         await auth.currentUser.delete();
       }
-      if (error.code === 'auth/weak-password') {
-        throw new Error('Password should be at least 6 characters');
-      } else if (error.code === 'auth/email-already-in-use') {
-        throw new Error('Email already in use');
-      } else if (error.code === 'auth/invalid-email') {
-        throw new Error('Invalid email address');
-      } else {
-        throw new Error(error.message || 'Failed to sign up. Please try again.');
-      }
+      setLoading(false);
+      toast.error(error.message || 'Failed to create account');
+      throw error;
     }
   };
 
   const signOut = async (): Promise<void> => {
     try {
+      setLoading(true);
       await firebaseSignOut(auth);
-      router.push('/login');
-    } catch (error) {
-      console.error('Error signing out:', error);
+      // Clear the session cookie immediately
+      clearCookie('__session');
+      toast.success('Signed out successfully');
+      router.replace('/login');
+    } catch (error: any) {
+      setLoading(false);
+      toast.error(error.message || 'Failed to sign out');
       throw error;
     }
   };

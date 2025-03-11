@@ -88,7 +88,7 @@ export default function AdminUsersPage() {
                       ) : (
                         <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center">
                           <span className="text-primary-600 font-medium">
-                            {user.displayName[0].toUpperCase()}
+                            {user.displayName?.[0]?.toUpperCase() || '?'}
                           </span>
                         </div>
                       )}

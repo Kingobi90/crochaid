@@ -9,16 +9,12 @@ const protectedPaths = [
   '/dashboard/profile',
 ];
 
-// List of paths that are only accessible to non-authenticated users
-const authPaths = ['/login', '/signup'];
-
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get('__session'); // Firebase auth token
+  const token = request.cookies.get('__session')?.value;
   const { pathname } = request.nextUrl;
 
   // Check if the path is protected
   const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path));
-  const isAuthPath = authPaths.some(path => pathname === path);
 
   // If it's a protected path and user is not authenticated
   if (isProtectedPath && !token) {
@@ -27,23 +23,15 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // If it's an auth path and user is authenticated
-  if (isAuthPath && token) {
+  // If user is authenticated, redirect auth pages to dashboard
+  if (token && (pathname === '/login' || pathname === '/signup')) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   return NextResponse.next();
 }
 
+// Fixed matcher config
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ['/dashboard/:path*', '/login', '/signup']
 };

@@ -3,6 +3,7 @@
 import { AuthProvider } from '@/lib/auth';
 import { ReactNode, useEffect, useState } from 'react';
 import { getApp } from 'firebase/app';
+import { Toaster } from 'react-hot-toast';
 
 export function Providers({ children }: { children: ReactNode }) {
   const [isFirebaseReady, setIsFirebaseReady] = useState(false);
@@ -28,6 +29,7 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <AuthProvider>
+      <Toaster position="top-right" />
       {children}
     </AuthProvider>
   );
