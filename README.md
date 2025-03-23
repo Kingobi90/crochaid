@@ -34,17 +34,11 @@ src/
 ├── lib/                   # Utility functions and configurations
 └── styles/                # Global styles and Tailwind config
 
-```
 
-## Getting Started
 
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
 
-3. Create a `.env.local` file in the root directory with the following variables:
+
+## Create a `.env.local` file in the root directory with the following variables:
    ```
    NEXT_PUBLIC_FIREBASE_API_KEY=
    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
@@ -55,59 +49,21 @@ src/
    NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=
    NEXT_PUBLIC_CLOUDINARY_API_KEY=
    NEXT_PUBLIC_CLOUDINARY_API_SECRET=
-   ```
 
-4. Start the development server:
-   ```bash
-   npm run dev
-   ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser
-
-## Development Workflow
-
-1. Create a new branch for each feature
-2. Follow TypeScript best practices
-3. Use Tailwind CSS for styling
-4. Test components thoroughly
-5. Submit PR for review
-
-## Firebase Configuration
-
-### Prerequisites
 1. Node.js 18+ and npm
 2. Firebase account and project
 3. Firebase CLI (`npm install -g firebase-tools`)
 
-### Firebase Setup
-1. Install Firebase CLI:
-```bash
-npm install -g firebase-tools
-```
 
-2. Login to Firebase:
-```bash
-firebase login
-```
-
-3. Initialize Firebase project:
-```bash
-firebase init
-```
-
-4. Deploy Firebase configuration:
-```bash
-firebase deploy --only firestore:rules,storage:rules
-```
-
-### Security Rules
+## Security Rules
 The application uses custom security rules for Firestore and Storage:
 - Users can only read and update their own data
 - Events are publicly readable but only admins can create/update
 - Chat messages are only accessible to conversation participants
 - File uploads are restricted based on user roles and ownership
 
-### Database Structure
+## Database Structure
 ```
 /users
   /{userId}
@@ -133,27 +89,3 @@ The application uses custom security rules for Firestore and Storage:
     - messages
 ```
 
-### Deployment
-1. Build the application:
-```bash
-npm run build
-```
-
-2. Deploy to Firebase Hosting:
-```bash
-npm run deploy
-```
-
-Or deploy specific features:
-```bash
-npm run deploy:hosting    # Deploy only hosting
-npm run deploy:rules      # Deploy only security rules
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a new Pull Request
